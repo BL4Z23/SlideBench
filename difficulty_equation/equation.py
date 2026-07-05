@@ -145,6 +145,18 @@ def stratified_split(df, tier_order, test_frac=0.2, seed=0):
     return np.array(train_idx), np.array(test_idx)
 
 
+def save_split(df, train_idx, test_idx, held_out_path="held_out_puzzles.csv",
+               train_path="train_puzzles.csv"):
+    """Persist the 80/20 split to disk so evaluator.py can load the exact
+    same held-out 20% later and verify equations against data the fit
+    never saw."""
+    df.iloc[train_idx].reset_index(drop=True).to_csv(train_path, index=False)
+    df.iloc[test_idx].reset_index(drop=True).to_csv(held_out_path, index=False)
+    print(f"\nWrote {train_path} ({len(train_idx)} puzzles, the 80% used for fitting)")
+    print(f"Wrote {held_out_path} ({len(test_idx)} puzzles, the 20% held out -- "
+          f"use evaluator.py on this file)")
+
+
 # ============================================================
 # Linear fitting (strict separation, falls back to soft-margin)
 # ============================================================
@@ -255,8 +267,9 @@ def run_linear(args):
 
     train_idx, test_idx = stratified_split(df, tier_order, seed=args.seed)
     train_df = df.iloc[train_idx].reset_index(drop=True)
+    save_split(df, train_idx, test_idx)
 
-    print("\n=== Attempting strict (non-overlapping) separation on TRAIN split ===")
+    print("\n=== Attempting strict (non-overlapping) separation on TRAIN split (80%) ===")
     weights = fit_strict(train_df, tier_order, args.width_penalty, args.restarts, args.seed)
 
     mode = "strict"
@@ -272,12 +285,16 @@ def run_linear(args):
 
     all_scores = compute_scores(df, weights)
     df["score"] = all_scores
-    report_separation(df, all_scores, tier_order, label="FULL data (train+test)")
+    report_separation(df, all_scores, tier_order, label="FULL data (100%, the trends)")
     report_separation(df.iloc[test_idx].reset_index(drop=True), all_scores[test_idx],
                        tier_order, label="HELD-OUT test split only (the honest check)")
 
     df.to_csv("scored_puzzles_linear.csv", index=False)
     print("\nWrote scored_puzzles_linear.csv")
+
+    weights_df = pd.DataFrame({"feature": FEATURE_COLUMNS, "weight": weights})
+    weights_df.to_csv("fitted_weights_linear.csv", index=False)
+    print("Wrote fitted_weights_linear.csv -- use evaluator.py to verify against held_out_puzzles.csv")
 
 
 # ============================================================
@@ -345,6 +362,7 @@ def run_symbolic(args):
     X = df[FEATURE_COLUMNS].to_numpy(dtype=float)
 
     train_idx, test_idx = stratified_split(df, tier_order, seed=args.seed)
+    save_split(df, train_idx, test_idx)
 
     print(f"\n=== Symbolic search settings ===")
     print(f"  iterations:              {args.iterations}")
@@ -353,7 +371,8 @@ def run_symbolic(args):
     print(f"  cycles per iteration:    {args.ncycles_per_iteration}")
     print(f"  max equation complexity: {args.maxsize}")
     print(f"  parallel workers:        {args.procs} ({'deterministic, single-threaded' if args.procs == 0 else 'NOT bit-reproducible run-to-run'})")
-    print(f"  training puzzles:        {len(train_idx)}  (held out: {len(test_idx)})")
+    print(f"  training puzzles:        {len(train_idx)} (80%, used to fit the equation)")
+    print(f"  held-out puzzles:        {len(test_idx)} (20%, saved to held_out_puzzles.csv for evaluator.py)")
     print("This is a wide search -- expect it to take a while longer than a quick pass.\n")
 
     model = PySRRegressor(
@@ -381,7 +400,7 @@ def run_symbolic(args):
 
     all_scores = model.predict(X)
     df["score"] = all_scores
-    report_separation(df, all_scores, tier_order, label="FULL data (train+test)")
+    report_separation(df, all_scores, tier_order, label="FULL data (100%, the trends)")
     report_separation(df.iloc[test_idx].reset_index(drop=True), all_scores[test_idx],
                        tier_order, label="HELD-OUT test split only (the honest check)")
 
