@@ -40,14 +40,7 @@ BLOCK_STROKE = "#9c6530"
 
 
 def load_boards(path):
-    """Load board records from either format:
-      - .jsonl (JSON Lines, one board record per line) -- what
-        multimethod_dataset.py and tiered_difficulty_dataset.py actually
-        produce
-      - .json (a single JSON array of records) -- what the small demo
-        sample uses
-    Auto-detected by file extension, with a content-based fallback in case
-    the extension is misleading."""
+
     ext = os.path.splitext(path)[1].lower()
 
     if ext == ".jsonl":
