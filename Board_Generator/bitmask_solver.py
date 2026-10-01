@@ -21,7 +21,7 @@ import random
 from collections import deque
 
 GRID = 6
-EXIT_ROW = 2
+EXIT_ROW = 3
 
 
 def precompute_cell_masks():
@@ -33,7 +33,6 @@ def precompute_cell_masks():
     return masks
 
 CELL_MASK = precompute_cell_masks()
-
 
 def block_mask(row, col, length, horizontal):
     """Bitmask of all cells this block occupies at (row, col)."""
