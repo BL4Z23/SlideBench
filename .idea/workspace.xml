@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="7d7f141f-371a-4bff-98eb-3b02008c4916" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/SlideBench.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/difficulty_equation/table.py" beforeDir="false" afterPath="$PROJECT_DIR$/scans/table.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,22 +16,81 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "BL4Z23"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;BL4Z23&quot;
   }
-}]]></component>
+}</component>
   <component name="GithubPullRequestsUISettings"><![CDATA[{
   "selectedUrlAndAccountId": {
     "url": "https://github.com/BL4Z23/SlideBench.git",
-    "accountId": "dce594dc-3e77-44b7-8cc6-37feaea35ffc"
+    "accountId": "1676fb5f-0790-4269-bf9e-f60efe10fa00"
   }
 }]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0,
-  "fromUser": false
-}]]></component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="3.837977667390813E-23" />
+      <entry key="MS500" value="6.593574817511359E-5" />
+      <entry key="S2" value="0.38164465639414136" />
+      <entry key="S5" value="2.3454117353973345" />
+      <entry key="S10" value="4.32456078540655" />
+      <entry key="S30" value="6.514529259047838" />
+      <entry key="S60" value="7.218830824667263" />
+      <entry key="M2" value="7.599298741232587" />
+      <entry key="M5" value="7.8372233179101345" />
+      <entry key="M10" value="7.918189812200168" />
+      <entry key="M15" value="7.9453656952586025" />
+      <entry key="M30" value="7.972635648425256" />
+      <entry key="H1" value="7.986306003847819" />
+      <entry key="H2" value="7.993150044258279" />
+      <entry key="H4" value="7.996574282390683" />
+      <entry key="D1" value="7.999428944296315" />
+      <entry key="W1" value="7.999918418096617" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="1.000000000014961" />
+      <entry key="MS500" value="1.0068389947632364" />
+      <entry key="S2" value="1.2875729733376513" />
+      <entry key="S5" value="1.6074341818572606" />
+      <entry key="S10" value="1.779380639904059" />
+      <entry key="S30" value="1.9202726979515843" />
+      <entry key="S60" value="1.959308447764109" />
+      <entry key="M2" value="1.9794429272622827" />
+      <entry key="M5" value="1.9917258961893909" />
+      <entry key="M10" value="1.9958543549080814" />
+      <entry key="M15" value="1.9972343234813805" />
+      <entry key="M30" value="1.998616204295414" />
+      <entry key="H1" value="1.9993078626206313" />
+      <entry key="H2" value="1.9996538714078143" />
+      <entry key="H4" value="1.9998269207256896" />
+      <entry key="D1" value="1.9999711513737535" />
+      <entry key="W1" value="1.9999958787167245" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="3.2664246943020297E-4" />
+      <entry key="MS500" value="0.20095334244139906" />
+      <entry key="S2" value="1.137448478690217" />
+      <entry key="S5" value="3.5681703528609305" />
+      <entry key="S10" value="5.854849684950263" />
+      <entry key="S30" value="8.334395887261289" />
+      <entry key="S60" value="9.125378165652615" />
+      <entry key="M2" value="9.55168849553442" />
+      <entry key="M5" value="9.817962084442204" />
+      <entry key="M10" value="9.908522581115339" />
+      <entry key="M15" value="9.938912706197593" />
+      <entry key="M30" value="9.969405061740705" />
+      <entry key="H1" value="9.984689685966869" />
+      <entry key="H2" value="9.99234162899536" />
+      <entry key="H4" value="9.99617001065512" />
+      <entry key="D1" value="9.999361556768381" />
+      <entry key="W1" value="9.999908791088796" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3Frs4Q2ZHyY5EvBDJhuZzL1CChM" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -41,21 +99,30 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.table.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "master",
     "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "C:/Users/Rehan/SlideBench/SlideBench",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true"
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Rehan\SlideBench\SlideBench\scans" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -70,10 +137,14 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1782844330755</updated>
+      <workItem from="1792407595938" duration="486000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/equation_py$table.coverage" NAME="table Coverage Results" MODIFIED="1792407751277" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/difficulty_equation" />
   </component>
 </project>
