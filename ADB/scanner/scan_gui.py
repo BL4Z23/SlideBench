@@ -1,41 +1,36 @@
-"""
-Interactive scanning GUI.
+"""Interactive Unblock Me scanner GUI.
 
-Workflow:
-  - Set the tier in the text box (persists until you change it).
-  - Press Enter (anywhere in the window):
-      * First time ever: you're shown the current screen and asked to
-        click on the "Next level" button. That location is saved to
-        button_calibration.json and reused every time after.
-      * Every time after: it (1) taps that button via adb, (2) waits
-        briefly for the app to load the next level, (3) takes a
-        screenshot, (4) runs the scanner, (5) saves a JSON file for
-        that puzzle labeled with the current tier, (6) draws the
-        detected board on screen so you can visually confirm it read
-        correctly, (7) is ready for you to press Enter again.
-
-Requires: board calibration.json (top-left/bottom-right of the puzzle
-grid) must already exist, same as the original scanner.py expects.
+Requires calibration.json and scanner.py in the working directory.
+Uses ADB to capture the current board and advance to the next level.
 """
+
+from __future__ import annotations
 
 import json
-import os
 import subprocess
 import time
+import tkinter as tk
+from pathlib import Path
+from typing import Any, Callable
+from tkinter import messagebox
+
 import cv2
 import numpy as np
-import tkinter as tk
-from tkinter import messagebox
 
 from scanner import load_templates, scan_board
 
-CALIBRATION_PATH = "calibration.json"
-BUTTON_CALIB_PATH = "button_calibration.json"
-OUTPUT_DIR = "../scans"
-CANVAS_SIZE = 480
-TAP_TO_SCREENSHOT_DELAY = 0.6  # seconds, let the app finish loading the next level
-AUTO_CONTINUE_DELAY_MS = 100  # tiny gap between append and next step, just to keep the GUI responsive
 
+# Configuration
+CALIBRATION_PATH = Path("calibration.json")
+BUTTON_CALIB_PATH = Path("button_calibration.json")
+OUTPUT_DIR = Path("../scans")
+
+CANVAS_SIZE = 480
+TAP_TO_SCREENSHOT_DELAY = 0.6
+AUTO_CONTINUE_DELAY_MS = 100
+
+# Board colors
+BG_APP = "#faf8f5"
 BG_OUTER = "#8a6a3f"
 BG_BOARD = "#5c4530"
 GRID_LINE = "#4a3624"
@@ -45,295 +40,680 @@ RED_STROKE = "#8e2820"
 BLOCK_FILL = "#c8894a"
 BLOCK_STROKE = "#9c6530"
 
-
-def adb_capture():
-    raw = subprocess.check_output(["adb", "exec-out", "screencap", "-p"])
-    arr = np.frombuffer(raw, np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+Board = dict[str, Any]
 
 
-def adb_tap(x, y):
-    subprocess.check_call(["adb", "shell", "input", "tap", str(x), str(y)])
+# ============================================================
+# ADB
+# ============================================================
+
+class ADBClient:
+    """Handles communication with the Android device."""
+
+    @staticmethod
+    def capture() -> np.ndarray:
+        raw = subprocess.check_output(
+            ["adb", "exec-out", "screencap", "-p"]
+        )
+        image = cv2.imdecode(
+            np.frombuffer(raw, np.uint8),
+            cv2.IMREAD_COLOR,
+        )
+
+        if image is None:
+            raise RuntimeError("Could not decode the ADB screenshot.")
+
+        return image
+
+    @staticmethod
+    def tap(x: int, y: int) -> None:
+        subprocess.check_call(
+            ["adb", "shell", "input", "tap", str(x), str(y)]
+        )
 
 
-def load_button_calibration():
-    if os.path.exists(BUTTON_CALIB_PATH):
-        with open(BUTTON_CALIB_PATH) as f:
-            return json.load(f)
-    return None
+# ============================================================
+# Calibration storage
+# ============================================================
 
+class CalibrationStore:
+    """Loads and saves board and button calibration."""
 
-def save_button_calibration(x, y):
-    with open(BUTTON_CALIB_PATH, "w") as f:
-        json.dump({"x": x, "y": y}, f, indent=2)
+    def __init__(
+        self,
+        board_path: Path,
+        button_path: Path,
+    ):
+        self.board_path = board_path
+        self.button_path = button_path
 
-
-class ButtonPicker(tk.Toplevel):
-    """Shown once, on first Enter press: lets the user click on a live
-    screenshot to record where the 'next level' button is."""
-
-    def __init__(self, master, screenshot_bgr, on_picked):
-        super().__init__(master)
-        self.title("Click the 'next level' button")
-        self.on_picked = on_picked
-
-        h, w = screenshot_bgr.shape[:2]
-        self.scale = min(900 / w, 900 / h, 1.0)
-        disp_w, disp_h = int(w * self.scale), int(h * self.scale)
-
-        rgb = cv2.cvtColor(screenshot_bgr, cv2.COLOR_BGR2RGB)
-        resized = cv2.resize(rgb, (disp_w, disp_h))
-
-        # Encode to PPM in-memory so Tkinter's PhotoImage can load it
-        # without needing PIL as a dependency.
-        ok, buf = cv2.imencode(".ppm", cv2.cvtColor(resized, cv2.COLOR_RGB2BGR))
-        self._img = tk.PhotoImage(data=buf.tobytes())
-
-        tk.Label(self, text="Click exactly where the button is on screen",
-                 font=("Segoe UI", 11, "bold")).pack(pady=6)
-
-        self.canvas = tk.Canvas(self, width=disp_w, height=disp_h, highlightthickness=0)
-        self.canvas.pack()
-        self.canvas.create_image(0, 0, anchor="nw", image=self._img)
-        self.canvas.bind("<Button-1>", self._clicked)
-
-    def _clicked(self, event):
-        real_x = int(event.x / self.scale)
-        real_y = int(event.y / self.scale)
-        save_button_calibration(real_x, real_y)
-        self.destroy()
-        self.on_picked(real_x, real_y)
-
-
-class ScanApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Unblock Me Scanner")
-        self.configure(bg="#faf8f5")
-
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-        if not os.path.exists(CALIBRATION_PATH):
-            messagebox.showerror(
-                "Missing calibration.json",
-                f"'{CALIBRATION_PATH}' not found. Run the board calibration "
-                "step first (top_left/bottom_right of the puzzle grid) "
-                "before using this scanner."
+    def load_board(self) -> Board:
+        if not self.board_path.exists():
+            raise FileNotFoundError(
+                f"{self.board_path} is missing. "
+                "Run board calibration first."
             )
 
-        with open(CALIBRATION_PATH) as f:
-            self.board_cal = json.load(f)
+        with self.board_path.open(encoding="utf-8") as file:
+            return json.load(file)
 
+    def load_button(self) -> dict[str, int] | None:
+        if not self.button_path.exists():
+            return None
+
+        with self.button_path.open(encoding="utf-8") as file:
+            data = json.load(file)
+
+        return {
+            "x": int(data["x"]),
+            "y": int(data["y"]),
+        }
+
+    def save_button(self, x: int, y: int) -> None:
+        with self.button_path.open("w", encoding="utf-8") as file:
+            json.dump({"x": x, "y": y}, file, indent=2)
+
+
+# ============================================================
+# Puzzle storage
+# ============================================================
+
+class PuzzleStore:
+    """Persists puzzle lists, one JSON file per tier."""
+
+    def __init__(self, output_dir: Path):
+        self.output_dir = output_dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def _path_for(self, tier: str) -> Path:
+        # Prevent tier names from escaping the output directory.
+        safe_tier = Path(tier).name.strip()
+
+        if not safe_tier or safe_tier in {".", ".."}:
+            safe_tier = "unknown"
+
+        return self.output_dir / f"{safe_tier}.json"
+
+    def load_tier(self, tier: str) -> list[Board]:
+        path = self._path_for(tier)
+
+        if not path.exists():
+            return []
+
+        with path.open(encoding="utf-8") as file:
+            data = json.load(file)
+
+        return data if isinstance(data, list) else [data]
+
+    def save_tier(
+        self,
+        tier: str,
+        puzzles: list[Board],
+    ) -> str:
+        path = self._path_for(tier)
+
+        with path.open("w", encoding="utf-8") as file:
+            json.dump(puzzles, file, indent=2)
+
+        return str(path)
+
+    @staticmethod
+    def _identify(
+        tier: str,
+        index: int,
+        puzzle: Board,
+    ) -> Board:
+        saved = dict(puzzle)
+        saved["id"] = f"{tier}_{index:03d}"
+        saved["tier"] = tier
+        return saved
+
+    def append(
+        self,
+        tier: str,
+        puzzle: Board,
+    ) -> tuple[str, int, Board]:
+        puzzles = self.load_tier(tier)
+        index = len(puzzles)
+        saved = self._identify(tier, index, puzzle)
+
+        puzzles.append(saved)
+        path = self.save_tier(tier, puzzles)
+
+        return path, index, saved
+
+    def replace(
+        self,
+        tier: str,
+        index: int,
+        puzzle: Board,
+    ) -> str:
+        puzzles = self.load_tier(tier)
+
+        if not 0 <= index < len(puzzles):
+            raise IndexError(
+                f"Scan index {index} does not exist "
+                f"in tier '{tier}'."
+            )
+
+        puzzles[index] = self._identify(tier, index, puzzle)
+
+        return self.save_tier(tier, puzzles)
+
+
+# ============================================================
+# Button calibration window
+# ============================================================
+
+class ButtonPicker(tk.Toplevel):
+    """Lets the user select the next-level button on a screenshot."""
+
+    def __init__(
+        self,
+        master: tk.Misc,
+        screenshot: np.ndarray,
+        on_picked: Callable[[int, int], None],
+        calibration_store: CalibrationStore,
+    ):
+        super().__init__(master)
+
+        self.title("Select Next-Level Button")
+        self.on_picked = on_picked
+        self.calibration_store = calibration_store
+
+        height, width = screenshot.shape[:2]
+        self.scale = min(900 / width, 900 / height, 1.0)
+
+        display_width = int(width * self.scale)
+        display_height = int(height * self.scale)
+
+        resized = cv2.resize(
+            screenshot,
+            (display_width, display_height),
+        )
+
+        success, buffer = cv2.imencode(".ppm", resized)
+
+        if not success:
+            raise RuntimeError(
+                "Could not prepare the calibration screenshot."
+            )
+
+        self.image = tk.PhotoImage(data=buffer.tobytes())
+
+        tk.Label(
+            self,
+            text="Click the next-level button",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(pady=6)
+
+        self.canvas = tk.Canvas(
+            self,
+            width=display_width,
+            height=display_height,
+            highlightthickness=0,
+        )
+        self.canvas.pack()
+
+        self.canvas.create_image(
+            0,
+            0,
+            anchor="nw",
+            image=self.image,
+        )
+
+        self.canvas.bind("<Button-1>", self._on_click)
+
+    def _on_click(self, event: tk.Event) -> None:
+        x = int(event.x / self.scale)
+        y = int(event.y / self.scale)
+
+        self.calibration_store.save_button(x, y)
+        self.destroy()
+        self.on_picked(x, y)
+
+
+# ============================================================
+# Main application
+# ============================================================
+
+class ScanApp(tk.Tk):
+    """Coordinates the GUI, scanning workflow, and board editor."""
+
+    def __init__(self):
+        super().__init__()
+
+        self.title("Unblock Me Scanner")
+        self.configure(bg=BG_APP)
+
+        self.calibrations = CalibrationStore(
+            CALIBRATION_PATH,
+            BUTTON_CALIB_PATH,
+        )
+
+        try:
+            self.board_cal = self.calibrations.load_board()
+            self.button_calib = self.calibrations.load_button()
+        except (OSError, ValueError, KeyError) as exc:
+            messagebox.showerror("Calibration Error", str(exc))
+            self.destroy()
+            raise SystemExit(1) from exc
+
+        self.store = PuzzleStore(OUTPUT_DIR)
+        self.adb = ADBClient()
         self.templates = load_templates()
-        self.button_calib = load_button_calibration()
 
-        # --- top controls ---
-        top = tk.Frame(self, bg="#faf8f5")
+        # Last saved scan
+        self.last_saved_path: str | None = None
+        self.last_saved_tier: str | None = None
+        self.last_saved_index: int | None = None
+
+        # Current board
+        self.current_puzzle: Board | None = None
+        self.last_screenshot: np.ndarray | None = None
+
+        # Capture workflow
+        self.first_capture_done = False
+        self.auto_running = False
+        self.auto_job: str | None = None
+
+        # Board editor
+        self.amend_mode = False
+        self.selected_cell: tuple[int, int] | None = None
+        self.pending_orientation: str | None = None
+
+        self._build_ui()
+        self._bind_events()
+        self._draw_placeholder()
+
+    # --------------------------------------------------------
+    # UI construction
+    # --------------------------------------------------------
+
+    def _build_ui(self) -> None:
+        top = tk.Frame(self, bg=BG_APP)
         top.pack(fill="x", padx=16, pady=12)
 
-        tk.Label(top, text="Tier:", bg="#faf8f5", font=("Segoe UI", 11, "bold")).pack(side="left")
+        tk.Label(
+            top,
+            text="Tier:",
+            bg=BG_APP,
+            font=("Segoe UI", 11, "bold"),
+        ).pack(side="left")
+
         self.tier_var = tk.StringVar(value="easy")
-        self.tier_entry = tk.Entry(top, textvariable=self.tier_var, width=14, font=("Segoe UI", 11))
+
+        self.tier_entry = tk.Entry(
+            top,
+            textvariable=self.tier_var,
+            width=14,
+            font=("Segoe UI", 11),
+        )
         self.tier_entry.pack(side="left", padx=(6, 20))
 
-        self.status = tk.Label(top, text="Press Enter to capture", bg="#faf8f5", font=("Segoe UI", 10))
+        self.status = tk.Label(
+            top,
+            text="Press Enter to capture",
+            bg=BG_APP,
+            font=("Segoe UI", 10),
+        )
         self.status.pack(side="left")
 
-        # --- button row ---
-        btns = tk.Frame(self, bg="#faf8f5")
-        btns.pack(fill="x", padx=16, pady=(0, 8))
+        buttons = tk.Frame(self, bg=BG_APP)
+        buttons.pack(fill="x", padx=16, pady=(0, 8))
 
-        self.scan_again_btn = tk.Button(btns, text="Scan Again", command=self.on_scan_again)
+        self.scan_again_btn = tk.Button(
+            buttons,
+            text="Scan Again",
+            command=self.on_scan_again,
+        )
         self.scan_again_btn.pack(side="left")
 
-        self.amend_btn = tk.Button(btns, text="Amend Last Scan", command=self.on_toggle_amend)
+        self.amend_btn = tk.Button(
+            buttons,
+            text="Amend Last Scan",
+            command=self.on_toggle_amend,
+        )
         self.amend_btn.pack(side="left", padx=(8, 0))
 
-        self.save_amend_btn = tk.Button(btns, text="Save Amendment", command=self.on_save_amend, state="disabled")
+        self.save_amend_btn = tk.Button(
+            buttons,
+            text="Save Amendment",
+            command=self.on_save_amend,
+            state="disabled",
+        )
         self.save_amend_btn.pack(side="left", padx=(8, 0))
 
-        self.auto_btn = tk.Button(btns, text="Start Auto (continuous)", command=self.on_toggle_auto)
+        self.auto_btn = tk.Button(
+            buttons,
+            text="Start Auto (continuous)",
+            command=self.on_toggle_auto,
+        )
         self.auto_btn.pack(side="left", padx=(8, 0))
 
         self.amend_help = tk.Label(
             self,
             text="",
-            bg="#faf8f5", fg="#555", font=("Segoe UI", 9), justify="left"
+            bg=BG_APP,
+            fg="#555",
+            font=("Segoe UI", 9),
+            justify="left",
         )
         self.amend_help.pack(fill="x", padx=16)
 
-        # --- board canvas (visual) ---
-        wrap = tk.Frame(self, bg=BG_OUTER, padx=16, pady=16)
+        wrap = tk.Frame(
+            self,
+            bg=BG_OUTER,
+            padx=16,
+            pady=16,
+        )
         wrap.pack(padx=16, pady=(0, 16))
-        self.canvas = tk.Canvas(wrap, width=CANVAS_SIZE, height=CANVAS_SIZE, bg=BG_BOARD, highlightthickness=0)
+
+        self.canvas = tk.Canvas(
+            wrap,
+            width=CANVAS_SIZE,
+            height=CANVAS_SIZE,
+            bg=BG_BOARD,
+            highlightthickness=0,
+        )
         self.canvas.pack()
 
-        # Enter fires the capture loop from anywhere except while typing
-        # in the tier box (so you can type "medium" and hit Enter to
-        # confirm the tier without accidentally triggering a capture --
-        # instead, Enter in the tier box just moves focus away).
-        self.tier_entry.bind("<Return>", lambda e: self.focus())
-        self.bind("<Return>", self.on_enter)
-
-        self.last_saved_path = None
-        self.last_saved_tier = None
-        self.last_saved_index = None
-        self.current_puzzle = None       # dict currently shown/held in memory
-        self.first_capture_done = False  # True once we've scanned the level that was on screen at launch
-        self.auto_running = False
-        self.auto_job = None
-        self.last_screenshot = None      # raw BGR image behind current_puzzle
-        self.amend_mode = False
-        self.selected_cell = None        # (row, col) awaiting a placement key, while amending
-        self.pending_orientation = None  # "H" or "V", set by pressing h/v before a digit
-
-        self.canvas.bind("<Button-1>", self._on_canvas_click)
-        self.bind("<Key>", self._on_key)
-
-        self._draw_placeholder()
-
-    def _draw_placeholder(self):
-        self.canvas.delete("all")
-        self.canvas.create_text(
-            CANVAS_SIZE / 2, CANVAS_SIZE / 2,
-            text="No scan yet", fill="#d8c9b0", font=("Segoe UI", 14)
+    def _bind_events(self) -> None:
+        self.tier_entry.bind(
+            "<Return>",
+            lambda _event: self.focus(),
         )
+        self.bind("<Return>", self.on_enter)
+        self.bind("<Key>", self._on_key)
+        self.canvas.bind("<Button-1>", self._on_canvas_click)
 
-    def on_enter(self, event=None):
-        # Don't trigger while the user is actively typing in the tier box
+    def _set_status(self, message: str) -> None:
+        self.status.config(text=message)
+        self.update_idletasks()
+
+    def _current_tier(self) -> str:
+        return self.tier_var.get().strip() or "unknown"
+
+    # --------------------------------------------------------
+    # Capture workflow
+    # --------------------------------------------------------
+
+    def on_enter(self, _event: tk.Event | None = None) -> None:
         if self.focus_get() is self.tier_entry:
             return
 
-        if self.amend_mode:
-            return  # Enter is not used for capture while amending; use the buttons
-
-        if self.auto_running:
-            return  # already cycling on its own timer
+        if self.amend_mode or self.auto_running:
+            return
 
         self._do_capture_step()
 
-    def _do_capture_step(self):
-        """The actual capture logic (calibration-check, first-capture-
-        without-tap, else normal tap+scan). Shared by manual Enter presses
-        and the auto-cycle timer so behavior is identical either way."""
+    def _do_capture_step(self) -> None:
         if self.button_calib is None:
-            self.status.config(text="Capturing screen for button calibration...")
-            self.update_idletasks()
+            self._set_status("Capturing screen for calibration...")
+
             try:
-                shot = adb_capture()
-            except Exception as e:
-                messagebox.showerror("adb error", f"Could not capture screen: {e}")
-                self._stop_auto()  # don't keep retrying blind if adb is broken
-                return
-            ButtonPicker(self, shot, lambda x, y: self._on_button_picked(x, y, shot))
+                screenshot = self.adb.capture()
+
+                ButtonPicker(
+                    self,
+                    screenshot,
+                    lambda x, y, shot=screenshot:
+                        self._on_button_picked(x, y, shot),
+                    self.calibrations,
+                )
+            except Exception as exc:
+                messagebox.showerror("ADB Error", str(exc))
+                self._stop_auto()
+
             return
 
-        if not self.first_capture_done:
-            self._run_capture_cycle(skip_tap=True)
-            self.first_capture_done = True
-            return
+        self._run_capture_cycle(
+            skip_tap=not self.first_capture_done
+        )
 
-        self._run_capture_cycle()
-
-    def _on_button_picked(self, x, y, shot):
+    def _on_button_picked(
+        self,
+        x: int,
+        y: int,
+        screenshot: np.ndarray,
+    ) -> None:
         self.button_calib = {"x": x, "y": y}
-        # The screenshot taken for calibration is the level that's
-        # currently on screen, pre-tap -- scan it directly instead of
-        # discarding it and tapping into the next level.
-        self.status.config(text=f"Button set at ({x},{y}). Scanning current level...")
-        self.update_idletasks()
-        self._scan_and_save(shot)
-        self.first_capture_done = True
 
-    def on_toggle_auto(self):
+        self._set_status(
+            f"Button saved at ({x}, {y}). Scanning current level..."
+        )
+
+        try:
+            self._scan_and_save(screenshot)
+            self.first_capture_done = True
+        except Exception as exc:
+            self._handle_capture_error(exc)
+
+    def _run_capture_cycle(self, skip_tap: bool = False) -> None:
+        try:
+            if not skip_tap:
+                self._set_status("Tapping next-level button...")
+
+                self.adb.tap(
+                    self.button_calib["x"],
+                    self.button_calib["y"],
+                )
+
+                time.sleep(TAP_TO_SCREENSHOT_DELAY)
+
+            self._set_status("Capturing screenshot...")
+            screenshot = self.adb.capture()
+
+            self._scan_and_save(screenshot)
+            self.first_capture_done = True
+
+        except Exception as exc:
+            self._handle_capture_error(exc)
+
+    def _handle_capture_error(self, exc: Exception) -> None:
+        messagebox.showerror("Capture Failed", str(exc))
+        self._set_status(
+            "Error. See popup, then press Enter to retry."
+        )
+
         if self.auto_running:
             self._stop_auto()
-        else:
-            if self.amend_mode:
-                messagebox.showinfo("Finish amending first", "Save or cancel the current amendment before starting auto-cycle.")
-                return
-            self.auto_running = True
-            self.auto_btn.config(text="Stop", bg="#e74c3c", fg="white")
-            self.scan_again_btn.config(state="disabled")
-            self.amend_btn.config(state="disabled")
-            self.status.config(text="Auto-cycle running -- click Stop to end.")
-            self._auto_tick()
 
-    def _stop_auto(self):
+    def _scan_and_save(self, screenshot: np.ndarray) -> None:
+        tier = self._current_tier()
+
+        self._set_status("Scanning board...")
+
+        puzzle = scan_board(
+            screenshot,
+            self.board_cal,
+            self.templates,
+        )
+
+        path, index, puzzle = self.store.append(tier, puzzle)
+
+        self._remember_scan(
+            path,
+            tier,
+            index,
+            puzzle,
+            screenshot,
+        )
+
+        self._show_saved_status("Saved", index, path, puzzle)
+
+    def on_scan_again(self) -> None:
+        """Rescan the current screen and replace the last saved entry."""
+        if self.amend_mode:
+            messagebox.showinfo(
+                "Finish Editing",
+                "Save or cancel the current amendment first.",
+            )
+            return
+
+        try:
+            self._set_status("Capturing current screen...")
+            screenshot = self.adb.capture()
+
+            self._set_status("Scanning board...")
+            puzzle = scan_board(
+                screenshot,
+                self.board_cal,
+                self.templates,
+            )
+
+            if (
+                self.last_saved_tier is not None
+                and self.last_saved_index is not None
+            ):
+                tier = self.last_saved_tier
+                index = self.last_saved_index
+
+                path = self.store.replace(tier, index, puzzle)
+
+                puzzle["id"] = f"{tier}_{index:03d}"
+                puzzle["tier"] = tier
+            else:
+                tier = self._current_tier()
+                path, index, puzzle = self.store.append(
+                    tier,
+                    puzzle,
+                )
+
+            self._remember_scan(
+                path,
+                tier,
+                index,
+                puzzle,
+                screenshot,
+            )
+
+            self._show_saved_status(
+                "Re-scanned and replaced",
+                index,
+                path,
+                puzzle,
+            )
+
+        except Exception as exc:
+            messagebox.showerror("Scan Again Failed", str(exc))
+            self._set_status("Error. See popup.")
+
+    def _remember_scan(
+        self,
+        path: str,
+        tier: str,
+        index: int,
+        puzzle: Board,
+        screenshot: np.ndarray,
+    ) -> None:
+        self.last_saved_path = path
+        self.last_saved_tier = tier
+        self.last_saved_index = index
+
+        self.current_puzzle = puzzle
+        self.last_screenshot = screenshot
+
+        self._render_board(puzzle)
+
+    def _show_saved_status(
+        self,
+        prefix: str,
+        index: int,
+        path: str,
+        puzzle: Board,
+    ) -> None:
+        pieces = puzzle.get("pieces", [])
+        count = len(pieces)
+
+        has_red = any(
+            piece.get("is_red")
+            for piece in pieces
+        )
+
+        warning = (
+            " | WARNING: no red piece detected"
+            if not has_red
+            else ""
+        )
+
+        self._set_status(
+            f"{prefix} #{index} to {path} "
+            f"({count} pieces){warning}"
+        )
+
+    # --------------------------------------------------------
+    # Continuous scanning
+    # --------------------------------------------------------
+
+    def on_toggle_auto(self) -> None:
+        if self.auto_running:
+            self._stop_auto()
+            return
+
+        if self.amend_mode:
+            messagebox.showinfo(
+                "Finish Editing",
+                "Save or cancel the amendment before auto-scanning.",
+            )
+            return
+
+        self.auto_running = True
+
+        self.auto_btn.config(
+            text="Stop",
+            bg="#e74c3c",
+            fg="white",
+        )
+        self.scan_again_btn.config(state="disabled")
+        self.amend_btn.config(state="disabled")
+
+        self._set_status("Auto-scan running. Click Stop to end.")
+        self._auto_tick()
+
+    def _stop_auto(self) -> None:
         self.auto_running = False
+
         if self.auto_job is not None:
-            self.after_cancel(self.auto_job)
+            try:
+                self.after_cancel(self.auto_job)
+            except tk.TclError:
+                pass
+
             self.auto_job = None
-        self.auto_btn.config(text="Start Auto (continuous)", bg=self.cget("bg"), fg="black")
+
+        self.auto_btn.config(
+            text="Start Auto (continuous)",
+            bg=BG_APP,
+            fg="black",
+        )
         self.scan_again_btn.config(state="normal")
         self.amend_btn.config(state="normal")
-        self.status.config(text="Auto-cycle stopped.")
 
-    def _auto_tick(self):
+        self._set_status("Auto-scan stopped.")
+
+    def _auto_tick(self) -> None:
         if not self.auto_running:
             return
+
         self._do_capture_step()
-        # Continue immediately once this capture is done and appended --
-        # not after a fixed wait -- so the loop runs as fast as the tap/
-        # screenshot/scan cycle itself allows. AUTO_CONTINUE_DELAY_MS is
-        # just a tiny yield back to the GUI event loop, not a real pause.
-        if self.auto_running:  # a failure inside _do_capture_step may have called _stop_auto
-            self.auto_job = self.after(AUTO_CONTINUE_DELAY_MS, self._auto_tick)
 
-    def on_scan_again(self):
-        """Re-captures and re-scans the CURRENT screen (no button tap) --
-        for when a scan came out wrong and you just want to retry reading
-        the same puzzle, not advance to a new one. Overwrites the same
-        entry in the tier's list that was last saved (or appends fresh
-        if nothing's been saved yet this session)."""
-        if self.amend_mode:
-            messagebox.showinfo("Finish amending first", "Save or cancel the current amendment before scanning again.")
-            return
-        try:
-            self.status.config(text="Re-capturing current screen...")
-            self.update_idletasks()
-            img = adb_capture()
+        if self.auto_running:
+            self.auto_job = self.after(
+                AUTO_CONTINUE_DELAY_MS,
+                self._auto_tick,
+            )
 
-            self.status.config(text="Re-scanning board...")
-            self.update_idletasks()
-            puzzle = scan_board(img, self.board_cal, self.templates)
+    # --------------------------------------------------------
+    # Board editing
+    # --------------------------------------------------------
 
-            if self.last_saved_tier is not None:
-                tier = self.last_saved_tier
-                lst = self._load_tier_list(tier)
-                idx = self.last_saved_index
-                puzzle["id"] = f"{tier}_{idx:03d}"
-                puzzle["tier"] = tier
-                lst[idx] = puzzle
-                out_path = self._save_tier_list(tier, lst)
-            else:
-                tier = self.tier_var.get().strip() or "unknown"
-                lst = self._load_tier_list(tier)
-                idx = len(lst)
-                puzzle["id"] = f"{tier}_{idx:03d}"
-                puzzle["tier"] = tier
-                lst.append(puzzle)
-                out_path = self._save_tier_list(tier, lst)
-                self.last_saved_tier = tier
-                self.last_saved_index = idx
-
-            self.last_saved_path = out_path
-            self.current_puzzle = puzzle
-            self.last_screenshot = img
-            self._render_board(puzzle)
-
-            n_pieces = len(puzzle["pieces"])
-            has_red = any(p["is_red"] for p in puzzle["pieces"])
-            warn = "  ⚠ NO RED PIECE DETECTED" if not has_red else ""
-            self.status.config(text=f"Re-scanned, overwrote #{idx} in {out_path} ({n_pieces} pieces){warn}")
-
-        except Exception as e:
-            messagebox.showerror("Scan again failed", str(e))
-            self.status.config(text="Error -- see popup.")
-
-    def on_toggle_amend(self):
+    def on_toggle_amend(self) -> None:
         if self.current_puzzle is None:
-            messagebox.showinfo("Nothing to amend", "Scan a board first before amending it.")
+            messagebox.showinfo(
+                "Nothing to Edit",
+                "Scan a board before editing it.",
+            )
             return
 
         self.amend_mode = not self.amend_mode
@@ -341,256 +721,391 @@ class ScanApp(tk.Tk):
         self.pending_orientation = None
 
         if self.amend_mode:
-            self.amend_btn.config(text="Cancel Amend", relief="sunken")
-            self.save_amend_btn.config(state="normal")
-            self.amend_help.config(
-                text="Amend mode: click a piece to DELETE it. Click an empty cell, "
-                     "then press h/v (orientation) then 2/3 (length) to ADD a piece there. "
-                     "Press r to add the red car (always horizontal, length 2) anchored at "
-                     "the clicked cell. Esc clears the current selection."
+            self.amend_btn.config(
+                text="Cancel Amend",
+                relief="sunken",
             )
-            self.status.config(text="Amending -- edit the board, then click 'Save Amendment'.")
+            self.save_amend_btn.config(state="normal")
+
+            self.amend_help.config(
+                text=(
+                    "Edit mode: click a piece to delete it. Click an "
+                    "empty cell, then press h/v and 2/3 to add a piece. "
+                    "Press r to add the red car (horizontal, length 2). "
+                    "Esc clears the selection."
+                )
+            )
+
+            self._set_status(
+                "Editing board. Save your changes when finished."
+            )
+
         else:
-            self.amend_btn.config(text="Amend Last Scan", relief="raised")
+            self.amend_btn.config(
+                text="Amend Last Scan",
+                relief="raised",
+            )
             self.save_amend_btn.config(state="disabled")
             self.amend_help.config(text="")
-            self._render_board(self.current_puzzle)  # discard unsaved edits, redraw as-saved
-            self.status.config(text="Amend cancelled.")
 
-    def on_save_amend(self):
-        if self.last_saved_tier is None or self.last_saved_index is None or self.current_puzzle is None:
+            self._reload_saved_puzzle()
+            self._set_status("Amendment cancelled.")
+
+    def _reload_saved_puzzle(self) -> None:
+        if (
+            self.last_saved_tier is None
+            or self.last_saved_index is None
+        ):
             return
-        lst = self._load_tier_list(self.last_saved_tier)
-        lst[self.last_saved_index] = self.current_puzzle
-        out_path = self._save_tier_list(self.last_saved_tier, lst)
-        self.on_toggle_amend()  # exits amend mode, since amend_mode is True this flips it off
-        self.status.config(text=f"Saved amendment to #{self.last_saved_index} in {out_path}")
 
-    def _on_canvas_click(self, event):
+        puzzles = self.store.load_tier(self.last_saved_tier)
+        index = self.last_saved_index
+
+        if 0 <= index < len(puzzles):
+            self.current_puzzle = puzzles[index]
+            self._render_board(self.current_puzzle)
+
+    def on_save_amend(self) -> None:
+        if (
+            self.last_saved_tier is None
+            or self.last_saved_index is None
+            or self.current_puzzle is None
+        ):
+            return
+
+        try:
+            path = self.store.replace(
+                self.last_saved_tier,
+                self.last_saved_index,
+                self.current_puzzle,
+            )
+
+            self.last_saved_path = path
+            saved_index = self.last_saved_index
+
+            self.on_toggle_amend()
+
+            self._set_status(
+                f"Saved amendment to #{saved_index} in {path}"
+            )
+
+        except Exception as exc:
+            messagebox.showerror(
+                "Save Amendment Failed",
+                str(exc),
+            )
+
+    def _on_canvas_click(self, event: tk.Event) -> None:
         if not self.amend_mode or self.current_puzzle is None:
             return
 
         grid = self.current_puzzle["grid_size"]
-        cell = CANVAS_SIZE / grid
-        c = int(event.x // cell)
-        r = int(event.y // cell)
-        if not (0 <= r < grid and 0 <= c < grid):
+        cell_size = CANVAS_SIZE / grid
+
+        col = int(event.x // cell_size)
+        row = int(event.y // cell_size)
+
+        if not (0 <= row < grid and 0 <= col < grid):
             return
 
-        # Clicking a cell that's part of an existing piece deletes that piece
-        hit_piece = self._piece_at(r, c)
-        if hit_piece is not None:
-            self.current_puzzle["pieces"].remove(hit_piece)
+        piece = self._piece_at(row, col)
+
+        if piece is not None:
+            self.current_puzzle["pieces"].remove(piece)
+
             self.selected_cell = None
             self.pending_orientation = None
-            self._render_board(self.current_puzzle, selection=None)
-            self.status.config(text=f"Deleted piece '{hit_piece['id']}'. Amend mode still on -- Save when done.")
+
+            self._render_board(self.current_puzzle)
+
+            self._set_status(
+                f"Deleted piece '{piece['id']}'. Save when done."
+            )
             return
 
-        # Otherwise select this empty cell, awaiting orientation+length keys
-        self.selected_cell = (r, c)
+        self.selected_cell = (row, col)
         self.pending_orientation = None
-        self._render_board(self.current_puzzle, selection=self.selected_cell)
 
-    def _piece_at(self, r, c):
-        for p in self.current_puzzle["pieces"]:
-            cells = []
-            if p["orientation"] == "H":
-                cells = [(p["row"], p["col"] + i) for i in range(p["length"])]
-            else:
-                cells = [(p["row"] + i, p["col"]) for i in range(p["length"])]
-            if (r, c) in cells:
-                return p
+        self._render_board(
+            self.current_puzzle,
+            selection=self.selected_cell,
+        )
+
+    def _piece_at(
+        self,
+        row: int,
+        col: int,
+    ) -> Board | None:
+        if self.current_puzzle is None:
+            return None
+
+        for piece in self.current_puzzle["pieces"]:
+            if (row, col) in self._piece_cells(piece):
+                return piece
+
         return None
 
-    def _occupied_cells(self):
-        occ = set()
-        for p in self.current_puzzle["pieces"]:
-            if p["orientation"] == "H":
-                occ.update((p["row"], p["col"] + i) for i in range(p["length"]))
-            else:
-                occ.update((p["row"] + i, p["col"]) for i in range(p["length"]))
-        return occ
+    @staticmethod
+    def _piece_cells(
+        piece: Board,
+    ) -> list[tuple[int, int]]:
+        if piece["orientation"] == "H":
+            return [
+                (piece["row"], piece["col"] + offset)
+                for offset in range(piece["length"])
+            ]
 
-    def _on_key(self, event):
-        if not self.amend_mode or self.selected_cell is None:
+        return [
+            (piece["row"] + offset, piece["col"])
+            for offset in range(piece["length"])
+        ]
+
+    def _occupied_cells(self) -> set[tuple[int, int]]:
+        if self.current_puzzle is None:
+            return set()
+
+        return {
+            cell
+            for piece in self.current_puzzle["pieces"]
+            for cell in self._piece_cells(piece)
+        }
+
+    def _on_key(self, event: tk.Event) -> None:
+        if (
+            not self.amend_mode
+            or self.current_puzzle is None
+            or self.selected_cell is None
+        ):
             return
 
         key = event.keysym.lower()
-        grid = self.current_puzzle["grid_size"]
-        r, c = self.selected_cell
+        row, col = self.selected_cell
 
         if key == "escape":
             self.selected_cell = None
             self.pending_orientation = None
-            self._render_board(self.current_puzzle, selection=None)
+            self._render_board(self.current_puzzle)
+
+        elif key in ("h", "v"):
+            self.pending_orientation = key.upper()
+            self._set_status(
+                f"Orientation: {self.pending_orientation}. "
+                "Press 2 or 3 for length."
+            )
+
+        elif key == "r":
+            self._try_place(
+                row,
+                col,
+                length=2,
+                orientation="H",
+                is_red=True,
+                piece_id="R",
+            )
+
+        elif key in ("2", "3") and self.pending_orientation:
+            self._try_place(
+                row,
+                col,
+                length=int(key),
+                orientation=self.pending_orientation,
+                is_red=False,
+            )
+
+    def _try_place(
+        self,
+        row: int,
+        col: int,
+        length: int,
+        orientation: str,
+        is_red: bool,
+        piece_id: str | None = None,
+    ) -> None:
+        if self.current_puzzle is None:
             return
 
-        if key in ("h", "v"):
-            self.pending_orientation = "H" if key == "h" else "V"
-            self.status.config(text=f"Orientation set to {self.pending_orientation}. Press 2 or 3 for length.")
-            return
-
-        if key == "r":
-            self._try_place(r, c, length=2, orientation="H", is_red=True, piece_id="R")
-            return
-
-        if key in ("2", "3") and self.pending_orientation is not None:
-            self._try_place(r, c, length=int(key), orientation=self.pending_orientation, is_red=False)
-            return
-
-    def _try_place(self, r, c, length, orientation, is_red, piece_id=None):
         grid = self.current_puzzle["grid_size"]
 
-        if is_red and any(p["is_red"] for p in self.current_puzzle["pieces"]):
-            messagebox.showwarning("Only one red piece", "A red piece already exists -- delete it first.")
+        if is_red and any(
+            piece.get("is_red")
+            for piece in self.current_puzzle["pieces"]
+        ):
+            messagebox.showwarning(
+                "Only One Red Piece",
+                "A red piece already exists. Delete it first.",
+            )
             return
 
         if orientation == "H":
-            if c + length > grid:
-                messagebox.showwarning("Out of bounds", "Piece doesn't fit horizontally from this cell.")
+            if col + length > grid:
+                messagebox.showwarning(
+                    "Out of Bounds",
+                    "Piece does not fit horizontally from this cell.",
+                )
                 return
-            cells = [(r, c + i) for i in range(length)]
-        else:
-            if r + length > grid:
-                messagebox.showwarning("Out of bounds", "Piece doesn't fit vertically from this cell.")
-                return
-            cells = [(r + i, c) for i in range(length)]
 
-        occ = self._occupied_cells()
-        if any(cell in occ for cell in cells):
-            messagebox.showwarning("Overlap", "That placement overlaps an existing piece.")
+            cells = [
+                (row, col + offset)
+                for offset in range(length)
+            ]
+
+        else:
+            if row + length > grid:
+                messagebox.showwarning(
+                    "Out of Bounds",
+                    "Piece does not fit vertically from this cell.",
+                )
+                return
+
+            cells = [
+                (row + offset, col)
+                for offset in range(length)
+            ]
+
+        occupied = self._occupied_cells()
+
+        if any(cell in occupied for cell in cells):
+            messagebox.showwarning(
+                "Overlap",
+                "That placement overlaps an existing piece.",
+            )
             return
 
         if piece_id is None:
-            existing_letters = {p["id"] for p in self.current_puzzle["pieces"] if p["id"] != "R"}
-            i = 0
-            while chr(ord("A") + i) in existing_letters:
-                i += 1
-            piece_id = chr(ord("A") + i)
+            existing_ids = {
+                piece["id"]
+                for piece in self.current_puzzle["pieces"]
+                if piece["id"] != "R"
+            }
+
+            number = 0
+
+            while chr(ord("A") + number) in existing_ids:
+                number += 1
+
+            piece_id = chr(ord("A") + number)
 
         self.current_puzzle["pieces"].append({
-            "id": piece_id, "row": r, "col": c, "length": length,
-            "orientation": orientation, "is_red": is_red,
+            "id": piece_id,
+            "row": row,
+            "col": col,
+            "length": length,
+            "orientation": orientation,
+            "is_red": is_red,
         })
+
         self.selected_cell = None
         self.pending_orientation = None
-        self._render_board(self.current_puzzle, selection=None)
-        self.status.config(text=f"Added piece '{piece_id}'. Amend mode still on -- Save when done.")
 
-    def _tier_file_path(self, tier):
-        return os.path.join(OUTPUT_DIR, f"{tier}.json")
+        self._render_board(self.current_puzzle)
 
-    def _load_tier_list(self, tier):
-        """Reads the accumulating list of puzzles for this tier from disk.
-        Always reads fresh from disk (not from memory) so that restarting
-        the app and continuing where you left off works correctly --
-        e.g. if 600 boards are already saved, the next one becomes #601
-        in the same file, rather than starting a new file or overwriting."""
-        path = self._tier_file_path(tier)
-        if os.path.exists(path):
-            with open(path) as f:
-                data = json.load(f)
-            return data if isinstance(data, list) else [data]
-        return []
+        self._set_status(
+            f"Added piece '{piece_id}'. Save when done."
+        )
 
-    def _save_tier_list(self, tier, lst):
-        path = self._tier_file_path(tier)
-        with open(path, "w") as f:
-            json.dump(lst, f, indent=2)
-        return path
+    # --------------------------------------------------------
+    # Board rendering
+    # --------------------------------------------------------
 
-    def _run_capture_cycle(self, skip_tap=False):
-        try:
-            if not skip_tap:
-                self.status.config(text="Tapping next-level button...")
-                self.update_idletasks()
-                adb_tap(self.button_calib["x"], self.button_calib["y"])
-                time.sleep(TAP_TO_SCREENSHOT_DELAY)
-
-            self.status.config(text="Capturing screenshot...")
-            self.update_idletasks()
-            img = adb_capture()
-
-            self._scan_and_save(img)
-
-        except Exception as e:
-            messagebox.showerror("Capture failed", str(e))
-            self.status.config(text="Error -- see popup. Press Enter to retry.")
-            if self.auto_running:
-                self._stop_auto()
-
-    def _scan_and_save(self, img):
-        """Runs the scanner on an already-captured image, appends the
-        result to the current tier's accumulating list on disk, and
-        updates the on-screen preview. Shared by the normal Enter flow
-        and the initial (pre-tap) first-level scan."""
-        tier = self.tier_var.get().strip() or "unknown"
-
-        self.status.config(text="Scanning board...")
-        self.update_idletasks()
-        puzzle = scan_board(img, self.board_cal, self.templates)
-
-        # Read whatever's already on disk for this tier (could be 0,
-        # could be 600) and append this puzzle as the next entry --
-        # this is what makes resuming after a restart work correctly.
-        lst = self._load_tier_list(tier)
-        idx = len(lst)
-        puzzle["id"] = f"{tier}_{idx:03d}"
-        puzzle["tier"] = tier
-        lst.append(puzzle)
-        out_path = self._save_tier_list(tier, lst)
-
-        self.last_saved_path = out_path
-        self.last_saved_tier = tier
-        self.last_saved_index = idx
-        self.current_puzzle = puzzle
-        self.last_screenshot = img
-        self._render_board(puzzle)
-
-        n_pieces = len(puzzle["pieces"])
-        has_red = any(p["is_red"] for p in puzzle["pieces"])
-        warn = "  ⚠ NO RED PIECE DETECTED" if not has_red else ""
-        self.status.config(text=f"Saved #{idx} to {out_path} ({n_pieces} pieces){warn}")
-
-    def _render_board(self, board, selection=None):
+    def _draw_placeholder(self) -> None:
         self.canvas.delete("all")
+
+        self.canvas.create_text(
+            CANVAS_SIZE / 2,
+            CANVAS_SIZE / 2,
+            text="No scan yet",
+            fill="#d8c9b0",
+            font=("Segoe UI", 14),
+        )
+
+    def _render_board(
+        self,
+        board: Board,
+        selection: tuple[int, int] | None = None,
+    ) -> None:
+        self.canvas.delete("all")
+
         grid = board["grid_size"]
         cell = CANVAS_SIZE / grid
 
-        for i in range(grid + 1):
-            p = i * cell
-            self.canvas.create_line(p, 0, p, CANVAS_SIZE, fill=GRID_LINE)
-            self.canvas.create_line(0, p, CANVAS_SIZE, p, fill=GRID_LINE)
+        # Grid lines
+        for index in range(grid + 1):
+            position = index * cell
 
-        ey = board["exit_row"] * cell
+            self.canvas.create_line(
+                position,
+                0,
+                position,
+                CANVAS_SIZE,
+                fill=GRID_LINE,
+            )
+            self.canvas.create_line(
+                0,
+                position,
+                CANVAS_SIZE,
+                position,
+                fill=GRID_LINE,
+            )
+
+        # Exit marker
+        exit_y = board["exit_row"] * cell
+
         if board["exit_side"] == "right":
-            self.canvas.create_rectangle(CANVAS_SIZE - 5, ey, CANVAS_SIZE, ey + cell, fill=EXIT_MARK, outline="")
-        else:
-            self.canvas.create_rectangle(0, ey, 5, ey + cell, fill=EXIT_MARK, outline="")
-
-        pad = 5
-        for piece in board["pieces"]:
-            x = piece["col"] * cell + pad
-            y = piece["row"] * cell + pad
-            if piece["orientation"] == "H":
-                w = piece["length"] * cell - pad * 2
-                h = cell - pad * 2
-            else:
-                w = cell - pad * 2
-                h = piece["length"] * cell - pad * 2
             self.canvas.create_rectangle(
-                x, y, x + w, y + h,
-                fill=RED_FILL if piece.get("is_red") else BLOCK_FILL,
-                outline=RED_STROKE if piece.get("is_red") else BLOCK_STROKE,
+                CANVAS_SIZE - 5,
+                exit_y,
+                CANVAS_SIZE,
+                exit_y + cell,
+                fill=EXIT_MARK,
+                outline="",
+            )
+        else:
+            self.canvas.create_rectangle(
+                0,
+                exit_y,
+                5,
+                exit_y + cell,
+                fill=EXIT_MARK,
+                outline="",
+            )
+
+        # Puzzle pieces
+        padding = 5
+
+        for piece in board["pieces"]:
+            x = piece["col"] * cell + padding
+            y = piece["row"] * cell + padding
+
+            if piece["orientation"] == "H":
+                width = piece["length"] * cell - 2 * padding
+                height = cell - 2 * padding
+            else:
+                width = cell - 2 * padding
+                height = piece["length"] * cell - 2 * padding
+
+            is_red = piece.get("is_red", False)
+
+            self.canvas.create_rectangle(
+                x,
+                y,
+                x + width,
+                y + height,
+                fill=RED_FILL if is_red else BLOCK_FILL,
+                outline=RED_STROKE if is_red else BLOCK_STROKE,
                 width=2,
             )
 
+        # Selected cell
         if selection is not None:
-            r, c = selection
+            row, col = selection
+
             self.canvas.create_rectangle(
-                c * cell, r * cell, (c + 1) * cell, (r + 1) * cell,
-                outline="#2ecc71", width=3,
+                col * cell,
+                row * cell,
+                (col + 1) * cell,
+                (row + 1) * cell,
+                outline="#2ecc71",
+                width=3,
             )
 
 
