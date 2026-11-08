@@ -20,7 +20,7 @@ fields = [
 
 names = ["bfs", "astar", "idastar"]
 
-folder = Path("../Converters/Converted")
+folder = Path("Converters/Converted")
 
 
 def is_grid(item):
