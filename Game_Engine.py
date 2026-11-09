@@ -104,7 +104,6 @@ def move(board, pos, distance):
             else:
                 return None
     return None
-
 def valid_moves(board):
     valid = []
     op = {cell for p in board for cell in piece_cells(p)}
@@ -138,7 +137,6 @@ def valid_moves(board):
                 distance += 1
 
     return valid
-
 def won(board):
     for piece in board:
         if piece[0] == "R":
@@ -147,9 +145,6 @@ def won(board):
             else:
                 return False
     return False
-
-
-
 
 
 
