@@ -1,7 +1,7 @@
 import csv
 import json
 from collections import deque
-from Game_Engine import *
+from slidebench.engine import *
 
 def bfs(initial_board):
     initial_board = tuple(

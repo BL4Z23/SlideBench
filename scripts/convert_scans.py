@@ -41,7 +41,7 @@ def converter(path):
                 raise ValueError(f"Unexpected piece: {piece}")
         js.append(matrix)
 
-    output_dir = Path(__file__).parent / "Converted"
+    output_dir = Path(__file__).parent / "levels"
     output_dir.mkdir(exist_ok=True)
     output_path = output_dir / Path(path).name.replace(".json", "_converted.json")
     with open(output_path, "w") as fil:
@@ -49,7 +49,7 @@ def converter(path):
 
 
 if __name__ == "__main__":
-    folder = Path("../scans")
+    folder = Path("../data/raw_scans")
     for file in folder.iterdir():
         if file.is_file() and file.suffix == ".json":
             converter(str(file))

@@ -4,14 +4,44 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7d7f141f-371a-4bff-98eb-3b02008c4916" name="Changes" comment="">
+    <list default="true" id="7d7f141f-371a-4bff-98eb-3b02008c4916" name="Changes" comment="organizing">
+      <change afterPath="$PROJECT_DIR$/slidebench/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/slidebench/solvers/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tree.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/difficulty_equation/table.py" beforeDir="false" afterPath="$PROJECT_DIR$/scans/table.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/scanner/block_screenshot.py" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/crop_template.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/scanner/calibrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/calibrate_board.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/scanner/scan_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scan_app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/scanner/scanner.py" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/detect.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/scanner/visual.py" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/view_raw.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/templates/2_Horizontal.png" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/templates/2_Horizontal.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/templates/2_Vertical.png" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/templates/2_Vertical.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/templates/3_Horizontal.png" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/templates/3_Horizontal.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/templates/3_Vertical.png" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/templates/3_Vertical.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ADB/templates/red.png" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/templates/red.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Converters/json_converter.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/convert_scans.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Game_Engine.py" beforeDir="false" afterPath="$PROJECT_DIR$/slidebench/engine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/algorithmic_level_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/run_baseline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scans/Advanced.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw_scans/Advanced.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scans/Beginner.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw_scans/Beginner.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scans/Expert.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw_scans/Expert.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scans/Intermediate.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw_scans/Intermediate.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scans/Starter.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw_scans/Starter.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/solvers/astar.py" beforeDir="false" afterPath="$PROJECT_DIR$/slidebench/solvers/astar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/solvers/bfs.py" beforeDir="false" afterPath="$PROJECT_DIR$/slidebench/solvers/bfs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/solvers/idastar.py" beforeDir="false" afterPath="$PROJECT_DIR$/slidebench/solvers/idastar.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -22,69 +52,69 @@
     &quot;assignee&quot;: &quot;BL4Z23&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/BL4Z23/SlideBench.git",
-    "accountId": "1676fb5f-0790-4269-bf9e-f60efe10fa00"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/BL4Z23/SlideBench.git&quot;,
+    &quot;accountId&quot;: &quot;dce594dc-3e77-44b7-8cc6-37feaea35ffc&quot;
   }
-}]]></component>
+}</component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="3.837977667390813E-23" />
-      <entry key="MS500" value="6.593574817511359E-5" />
-      <entry key="S2" value="0.38164465639414136" />
-      <entry key="S5" value="2.3454117353973345" />
-      <entry key="S10" value="4.32456078540655" />
-      <entry key="S30" value="6.514529259047838" />
-      <entry key="S60" value="7.218830824667263" />
-      <entry key="M2" value="7.599298741232587" />
-      <entry key="M5" value="7.8372233179101345" />
-      <entry key="M10" value="7.918189812200168" />
-      <entry key="M15" value="7.9453656952586025" />
-      <entry key="M30" value="7.972635648425256" />
-      <entry key="H1" value="7.986306003847819" />
-      <entry key="H2" value="7.993150044258279" />
-      <entry key="H4" value="7.996574282390683" />
-      <entry key="D1" value="7.999428944296315" />
-      <entry key="W1" value="7.999918418096617" />
+      <entry key="MS100" value="2.8225386342834217E-14" />
+      <entry key="MS500" value="0.001960731973900599" />
+      <entry key="S2" value="0.3053723190892244" />
+      <entry key="S5" value="1.1274838766802553" />
+      <entry key="S10" value="1.820767730603683" />
+      <entry key="S30" value="3.0236099310948874" />
+      <entry key="S60" value="5.098756965213944" />
+      <entry key="M2" value="8.488522710872164" />
+      <entry key="M5" value="17.089143865864298" />
+      <entry key="M10" value="33.886943641106505" />
+      <entry key="M15" value="52.20594988950361" />
+      <entry key="M30" value="103.33811401165971" />
+      <entry key="H1" value="192.22054863267044" />
+      <entry key="H2" value="325.98007719309857" />
+      <entry key="H4" value="465.80705998201176" />
+      <entry key="D1" value="670.3975033104332" />
+      <entry key="W1" value="723.1947121355875" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.000000000014961" />
-      <entry key="MS500" value="1.0068389947632364" />
-      <entry key="S2" value="1.2875729733376513" />
-      <entry key="S5" value="1.6074341818572606" />
-      <entry key="S10" value="1.779380639904059" />
-      <entry key="S30" value="1.9202726979515843" />
-      <entry key="S60" value="1.959308447764109" />
-      <entry key="M2" value="1.9794429272622827" />
-      <entry key="M5" value="1.9917258961893909" />
-      <entry key="M10" value="1.9958543549080814" />
-      <entry key="M15" value="1.9972343234813805" />
-      <entry key="M30" value="1.998616204295414" />
-      <entry key="H1" value="1.9993078626206313" />
-      <entry key="H2" value="1.9996538714078143" />
-      <entry key="H4" value="1.9998269207256896" />
-      <entry key="D1" value="1.9999711513737535" />
-      <entry key="W1" value="1.9999958787167245" />
+      <entry key="MS100" value="1.0000000000002838" />
+      <entry key="MS500" value="1.0030946672301757" />
+      <entry key="S2" value="1.23585956272384" />
+      <entry key="S5" value="1.5611273091196276" />
+      <entry key="S10" value="1.7491978775572197" />
+      <entry key="S30" value="1.9566177608208486" />
+      <entry key="S60" value="2.173052444048591" />
+      <entry key="M2" value="2.445322298757935" />
+      <entry key="M5" value="2.741984078216537" />
+      <entry key="M10" value="3.114085480676349" />
+      <entry key="M15" value="3.6465465564511974" />
+      <entry key="M30" value="5.284438724538093" />
+      <entry key="H1" value="7.83486272490898" />
+      <entry key="H2" value="11.301648239122782" />
+      <entry key="H4" value="14.825333815227989" />
+      <entry key="D1" value="20.595788458473898" />
+      <entry key="W1" value="22.589966983311665" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="3.2664246943020297E-4" />
-      <entry key="MS500" value="0.20095334244139906" />
-      <entry key="S2" value="1.137448478690217" />
-      <entry key="S5" value="3.5681703528609305" />
-      <entry key="S10" value="5.854849684950263" />
-      <entry key="S30" value="8.334395887261289" />
-      <entry key="S60" value="9.125378165652615" />
-      <entry key="M2" value="9.55168849553442" />
-      <entry key="M5" value="9.817962084442204" />
-      <entry key="M10" value="9.908522581115339" />
-      <entry key="M15" value="9.938912706197593" />
-      <entry key="M30" value="9.969405061740705" />
-      <entry key="H1" value="9.984689685966869" />
-      <entry key="H2" value="9.99234162899536" />
-      <entry key="H4" value="9.99617001065512" />
-      <entry key="D1" value="9.999361556768381" />
-      <entry key="W1" value="9.999908791088796" />
+      <entry key="MS100" value="0.005679580145814539" />
+      <entry key="MS500" value="0.35840753452835206" />
+      <entry key="S2" value="1.248023876814846" />
+      <entry key="S5" value="2.5175750983676095" />
+      <entry key="S10" value="3.467589023830244" />
+      <entry key="S30" value="4.938847042253922" />
+      <entry key="S60" value="7.246415701974356" />
+      <entry key="M2" value="10.91803495475119" />
+      <entry key="M5" value="19.822691697362295" />
+      <entry key="M10" value="36.99310260473426" />
+      <entry key="M15" value="55.843709892931365" />
+      <entry key="M30" value="108.61211332821686" />
+      <entry key="H1" value="200.04242984556004" />
+      <entry key="H2" value="337.2680557852175" />
+      <entry key="H4" value="480.62158502081127" />
+      <entry key="D1" value="690.9905240590888" />
+      <entry key="W1" value="745.7842500711063" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -92,6 +122,9 @@
   &quot;fromUser&quot;: false
 }</component>
   <component name="ProjectId" id="3Frs4Q2ZHyY5EvBDJhuZzL1CChM" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -99,7 +132,16 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.Game_Engine.executor": "Run",
+    "Python.algorithmic_graph_maker.executor": "Run",
+    "Python.astar.executor": "Run",
+    "Python.base_data_maker.executor": "Run",
+    "Python.bfs.executor": "Run",
+    "Python.idastar.executor": "Run",
+    "Python.json_converter.executor": "Run",
     "Python.table.executor": "Run",
+    "Python.temp.executor": "Run",
+    "Python.tree.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -108,7 +150,7 @@
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "master",
     "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "C:/Users/Rehan/SlideBench/SlideBench",
+    "last_opened_file_path": "C:/Users/REHAN/PycharmProjects/SlideBench/Base_Solved_Level_Data_run5",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -119,8 +161,16 @@
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\Base_Solved_Level_Data_run5" />
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\files" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\Rehan\SlideBench\SlideBench\scans" />
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\results\baseline_runs" />
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\results" />
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\scripts" />
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\data" />
+      <recent name="C:\Users\REHAN\PycharmProjects\SlideBench\scanner" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -138,13 +188,149 @@
       <option name="presentableId" value="Default" />
       <updated>1782844330755</updated>
       <workItem from="1792407595938" duration="486000" />
+      <workItem from="1794128223278" duration="4196000" />
+      <workItem from="1794142098844" duration="8731000" />
+      <workItem from="1794224420304" duration="148000" />
+      <workItem from="1794234981946" duration="1002000" />
+      <workItem from="1794301246674" duration="1084000" />
+      <workItem from="1794302510883" duration="34000" />
+      <workItem from="1794306051830" duration="90000" />
+      <workItem from="1794315016971" duration="487000" />
+      <workItem from="1794375643427" duration="1810000" />
     </task>
+    <task id="LOCAL-00001" summary="removed old table maker">
+      <option name="closed" value="true" />
+      <created>1794042535043</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1794042535043</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Created New JSON Format and designed converter">
+      <option name="closed" value="true" />
+      <created>1794148502249</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1794148502249</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Designed Game Engine">
+      <option name="closed" value="true" />
+      <created>1794148564300</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1794148564300</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Made BFS">
+      <option name="closed" value="true" />
+      <created>1794148589545</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1794148589545</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Made IDA*">
+      <option name="closed" value="true" />
+      <created>1794148599024</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1794148599024</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Made A*">
+      <option name="closed" value="true" />
+      <created>1794148613111</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1794148613111</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Designed a Graph Maker to study patterns of the Game levels">
+      <option name="closed" value="true" />
+      <created>1794148669619</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1794148669619</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Designed a Level Solver to study patterns of the Game levels">
+      <option name="closed" value="true" />
+      <created>1794149016635</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1794149016635</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Optimized IDA*">
+      <option name="closed" value="true" />
+      <created>1794149685958</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1794149685958</updated>
+    </task>
+    <task id="LOCAL-00010" summary="organizing">
+      <option name="closed" value="true" />
+      <created>1794315376439</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1794315376439</updated>
+    </task>
+    <task id="LOCAL-00011" summary="organizing">
+      <option name="closed" value="true" />
+      <created>1794315401035</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1794315401035</updated>
+    </task>
+    <task id="LOCAL-00012" summary="organizing">
+      <option name="closed" value="true" />
+      <created>1794315405674</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1794315405674</updated>
+    </task>
+    <task id="LOCAL-00013" summary="organizing">
+      <option name="closed" value="true" />
+      <created>1794376466892</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1794376466892</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="removed old table maker" />
+    <MESSAGE value="Created New JSON Format and designed converter" />
+    <MESSAGE value="Designed Game Engine" />
+    <MESSAGE value="Made BFS" />
+    <MESSAGE value="Made IDA*" />
+    <MESSAGE value="Made A*" />
+    <MESSAGE value="Designed a Graph Maker to study patterns of the Game levels" />
+    <MESSAGE value="Designed a Level Solver to study patterns of the Game levels" />
+    <MESSAGE value="Optimized IDA*" />
+    <MESSAGE value="organizing" />
+    <option name="LAST_COMMIT_MESSAGE" value="organizing" />
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/SlideBench$algorithmic_graph_maker.coverage" NAME="algorithmic_graph_maker Coverage Results" MODIFIED="1794148393405" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/difficulty_equation" />
+    <SUITE FILE_PATH="coverage/algorithmic_level_solver_py$tree.coverage" NAME="tree Coverage Results" MODIFIED="1794377262436" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/SlideBench$json_converter.coverage" NAME="json_converter Coverage Results" MODIFIED="1794138326661" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Converters" />
+    <SUITE FILE_PATH="coverage/SlideBench$astar.coverage" NAME="astar Coverage Results" MODIFIED="1794147792860" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/files" />
+    <SUITE FILE_PATH="coverage/SlideBench$base_data_maker.coverage" NAME="base_data_maker Coverage Results" MODIFIED="1794301989692" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/analysis" />
+    <SUITE FILE_PATH="coverage/SlideBench$idastar.coverage" NAME="idastar Coverage Results" MODIFIED="1794147841763" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/files" />
+    <SUITE FILE_PATH="coverage/SlideBench$Game_Engine.coverage" NAME="Game_Engine Coverage Results" MODIFIED="1794147970875" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/equation_py$table.coverage" NAME="table Coverage Results" MODIFIED="1792407751277" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/difficulty_equation" />
+    <SUITE FILE_PATH="coverage/SlideBench$bfs.coverage" NAME="bfs Coverage Results" MODIFIED="1794147777456" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/files" />
+    <SUITE FILE_PATH="coverage/SlideBench$temp.coverage" NAME="temp Coverage Results" MODIFIED="1794127474955" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Converters" />
   </component>
 </project>

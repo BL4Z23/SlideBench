@@ -1,6 +1,6 @@
 """Interactive Unblock Me scanner GUI.
 
-Requires calibration.json and scanner.py in the working directory.
+Requires calibration.json and detect.py in the working directory.
 Uses ADB to capture the current board and advance to the next level.
 """
 
@@ -17,13 +17,13 @@ from tkinter import messagebox
 import cv2
 import numpy as np
 
-from scanner import load_templates, scan_board
+from detect import load_templates, scan_board
 
 
 # Configuration
 CALIBRATION_PATH = Path("calibration.json")
 BUTTON_CALIB_PATH = Path("button_calibration.json")
-OUTPUT_DIR = Path("../scans")
+OUTPUT_DIR = Path("../data/raw_scans")
 
 CANVAS_SIZE = 480
 TAP_TO_SCREENSHOT_DELAY = 0.6

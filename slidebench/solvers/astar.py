@@ -2,7 +2,7 @@ import csv
 import heapq
 import json
 from itertools import count
-from Game_Engine import won, valid_moves, move, decode, SHAPE
+from slidebench.engine import won, valid_moves, move, decode, SHAPE
 
 GOAL_COL = 4
 

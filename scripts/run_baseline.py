@@ -12,21 +12,26 @@ from pathlib import Path
 import psutil
 from tqdm import tqdm
 
-from Game_Engine import decode
-from solvers.bfs import bfs
-from solvers.astar import astar
-from solvers.idastar import idastar
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from slidebench.engine import decode
+from slidebench.solvers.bfs import bfs
+from slidebench.solvers.astar import astar
+from slidebench.solvers.idastar import idastar
 
 ORDER = ["Starter", "Beginner", "Intermediate", "Advanced", "Expert"]
 
 fields = [
     "file", "index", "board", "solved",
-    "moves", "explored", "discovered", "time", "path", "error",
 ]
 
 names = ["bfs", "astar", "idastar"]
 
-folder = Path("Converters/Converted")
+folder = Path("../data/levels")
 
 WORKERS = max(1, (psutil.cpu_count(logical=False) or 2) - 1)
 IDLE_LIMIT = 5.0          # percent CPU allowed before the run starts

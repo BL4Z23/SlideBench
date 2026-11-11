@@ -1,6 +1,6 @@
 import csv
 import json
-from Game_Engine import decode, SHAPE, VALUE_TO_TYPE
+from slidebench.engine import decode, SHAPE, VALUE_TO_TYPE
 
 N = 6
 GOAL_COL = 4
