@@ -75,6 +75,10 @@ Training details:
 
 Preliminary result on the generated validation set: 98.4% exact, 1.0% overestimates. Evaluation on the real levels is still to do.
 
+## Planned: CNN heuristic
+
+A CNN version of the learned heuristic is also planned. The MLP flattens the board, so it has to learn from scratch which cells sit next to each other. A CNN works on the 6x6 grid directly, so it should see spatial arrangements (like a piece blocking the red block's row) more easily. It will follow the same interface as the MLP, so A\* can swap between the two, and it will be trained and tested on the same data split for a fair comparison.
+
 ## Evaluation plan
 
 For each solver on the real levels:
