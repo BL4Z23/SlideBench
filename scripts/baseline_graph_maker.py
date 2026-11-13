@@ -6,6 +6,26 @@ from pathlib import Path
 sns.set_style("darkgrid", {"axes.facecolor": ".9"})
 sns.set_context("talk")
 
+sns.set_theme(
+    style="darkgrid",
+    context="notebook",
+    palette="muted",
+    rc={
+        "figure.facecolor": "#0B0F19",
+        "axes.facecolor": "#111827",
+        "axes.edgecolor": "#263244",
+        "axes.labelcolor": "#CBD5E1",
+        "text.color": "#F8FAFC",
+        "xtick.color": "#94A3B8",
+        "ytick.color": "#94A3B8",
+        "grid.color": "#334155",
+        "grid.alpha": 0.3,
+        "axes.titleweight": "bold",
+        "axes.titlesize": 16,
+        "font.family": "DejaVu Sans",
+    }
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "results" / "baseline_graphs"
 OUTPUT.mkdir(parents=True, exist_ok=True)
