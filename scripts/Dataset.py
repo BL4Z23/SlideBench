@@ -4,22 +4,10 @@ from jinja2.filters import do_attr
 
 DB = "../data/generated/run_1/slidebench.db"
 import torch
-from torch.utils.data import Dataset
 
-class Data(Dataset):
     def __init__(self, filename):
         self.conn = sqlite3.connect(filename)
         self.cursor = self.conn.cursor()
-        self.cursor.execute("""
-                       DELETE
-                       FROM boards
-                       WHERE accepted = 0
-                       """)
-
-        self.conn.commit()
-        self.count = self.conn.execute("SELECT COUNT(*) FROM boards").fetchone()[0]
-        self.board_data = np.zeros((self.count, 36))
-        self.move_data = np.zeros((self.count, 1))
         self.cursor.execute("SELECT board, moves FROM boards")
         i = 0
         for row in self.cursor:
@@ -47,7 +35,4 @@ class Data(Dataset):
         move_tensor = torch.tensor(moves.item()/45, dtype=torch.float32)
 
         return board_tensor, move_tensor
-
-    def __len__(self):
-        return self.count
 
