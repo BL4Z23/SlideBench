@@ -1,5 +1,6 @@
+import numpy as np
 VALUE_TO_TYPE = {1: "R", 2: "2H", 3: "3H", 4: "2V", 5: "3V"}
-
+TYPE_TO_VALUE = {v: k for k, v in VALUE_TO_TYPE.items()}
 SHAPE = {"R": (2, "H"), "2H": (2, "H"), "3H": (3, "H"),
          "2V": (2, "V"), "3V": (3, "V")}
 N = 6
@@ -33,6 +34,21 @@ def decode(board):
             else:
                 row += 1
     return sorted(pieces, key=lambda p: p[1])
+
+def encode(pieces):
+    board = np.zeros((N, N), dtype=int)
+
+    for t, (row, col) in pieces:
+        value = TYPE_TO_VALUE[t]
+        length, orientation = SHAPE[t]
+
+        for i in range(length):
+            if orientation == "H":
+                board[row][col + i] = value
+            else:
+                board[row + i][col] = value
+
+    return board
 
 def piece_cells(piece):
     t, (r, c) = piece
