@@ -1,6 +1,5 @@
 import sqlite3
 import numpy as np
-from jinja2.filters import do_attr
 
 DB = "../data/generated/run_1/slidebench.db"
 import torch
@@ -10,17 +9,13 @@ class Data(Dataset):
     def __init__(self, filename):
         self.conn = sqlite3.connect(filename)
         self.cursor = self.conn.cursor()
-        self.cursor.execute("""
-                       DELETE
-                       FROM boards
-                       WHERE accepted = 0
-                       """)
-
-        self.conn.commit()
-        self.count = self.conn.execute("SELECT COUNT(*) FROM boards").fetchone()[0]
+        # read-only filter: don't DELETE rows from the DB itself
+        self.count = self.conn.execute(
+            "SELECT COUNT(*) FROM boards WHERE accepted = 1"
+        ).fetchone()[0]
         self.board_data = np.zeros((self.count, 36))
         self.move_data = np.zeros((self.count, 1))
-        self.cursor.execute("SELECT board, moves FROM boards")
+        self.cursor.execute("SELECT board, moves FROM boards WHERE accepted = 1")
         i = 0
         for row in self.cursor:
             board = row[0]
@@ -51,3 +46,9 @@ class Data(Dataset):
     def __len__(self):
         return self.count
 
+def masks_from_grid(grid):
+    grid = np.asarray(grid)
+    return (grid[..., None, :, :] == np.arange(6)[:, None, None]).astype(np.float32)
+
+def tensor_maker(grid):
+    return torch.from_numpy(masks_from_grid(grid)).unsqueeze(0)
