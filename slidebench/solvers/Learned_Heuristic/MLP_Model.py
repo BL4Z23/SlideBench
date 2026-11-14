@@ -1,6 +1,6 @@
 from torch import nn
 import torch
-from Dataset import tensor_maker
+from .Dataset import tensor_maker
 
 MAX_MOVES = 45
 
@@ -38,6 +38,7 @@ class MLP_Heuristic_Trainer(nn.Module):
 
 
 _model = None
+_margin = 0.0
 
 
 def _load(model_path):
@@ -45,19 +46,17 @@ def _load(model_path):
     model = MLP_Heuristic_Trainer(**ckpt["config"])
     model.load_state_dict(ckpt["state_dict"])
     model.eval()
-    return model
+    return model, float(ckpt.get("margin", 0.0))
 
 
 @torch.inference_mode()
-def calculate_heuristics(boards, model_path="model.pth"):
-    global _model
-    if _model is None:
-        _model = _load(model_path)
-
-    x = torch.cat([tensor_maker(b) for b in boards], dim=0)
-    preds = _model(x).squeeze(-1) * MAX_MOVES
-    return preds.round().clamp(min=0).int().tolist()
-
-
 def calculate_MLP_heuristic(board, model_path="model.pth"):
-    return calculate_heuristics([board], model_path)[0]
+    global _model, _margin
+    if _model is None:
+        _model, _margin = _load(model_path)
+
+    x = tensor_maker(board)
+    raw = _model(x).squeeze(-1) * MAX_MOVES
+    # floor (never round up) and subtract the calibrated safety margin
+    preds = torch.floor(raw - _margin).clamp(min=0)
+    return preds.int().tolist()[0]

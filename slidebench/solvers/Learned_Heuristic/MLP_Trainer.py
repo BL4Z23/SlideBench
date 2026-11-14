@@ -3,7 +3,7 @@ import copy
 import torch
 from torch import nn
 from torch.utils.data import random_split
-from slidebench.solvers.Learned_Heuristic.Dataset import Board_Data
+from slidebench.solvers.Learned_Heuristic.Dataset import Data
 from slidebench.solvers.Learned_Heuristic.MLP_Model import MLP_Heuristic_Trainer, MAX_MOVES
 
 DB = "../../../data/generated/run_1/slidebench.db"
@@ -14,7 +14,8 @@ CONFIG = {"width": 256, "blocks": 3, "dropout": 0.0}
 batch_size = 1024
 lr = 2e-3
 weight_decay = 1e-4
-over_weight = 1.0
+over_weight = 30.0          # penalty multiplier for overestimates (h > true)
+margin_quantile = 0.999     # calibrated margin covers this fraction of held-out errors
 max_epochs = 2000
 sched_patience = 8
 limit = 30
@@ -24,11 +25,14 @@ rel_improve = 1e-3
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
 print(f"Using {device} device")
 
-Training_Data = Board_Data(DB)
+Training_Data = Data(DB)
 generator = torch.Generator().manual_seed(41)
 val_size = int(0.1 * len(Training_Data))
-train_data, val_data = random_split(
-    Training_Data, [len(Training_Data) - val_size, val_size], generator=generator
+calib_size = int(0.1 * len(Training_Data))
+train_data, val_data, calib_data = random_split(
+    Training_Data,
+    [len(Training_Data) - val_size - calib_size, val_size, calib_size],
+    generator=generator,
 )
 
 
@@ -42,11 +46,11 @@ def to_tensors(subset):
 
 train_x, train_y = to_tensors(train_data)
 val_x, val_y = to_tensors(val_data)
+calib_x, calib_y = to_tensors(calib_data)
 n_train = train_x.size(0)
 
 torch.manual_seed(SEED)
 model = MLP_Heuristic_Trainer(**CONFIG).to(device)
-mse = nn.MSELoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode="min", factor=0.5, patience=sched_patience
@@ -86,12 +90,13 @@ for epoch in range(max_epochs):
     model.eval()
     with torch.no_grad():
         val_pred = model(val_x).squeeze(-1)
-        val_loss = mse(val_pred, val_y).item()
+        val_loss = train_loss_fn(val_pred, val_y).item()  # same asymmetric loss as training
         err_moves = (val_pred - val_y) * MAX_MOVES
         mae = err_moves.abs().mean().item()
-        rounded = err_moves.round()
-        exact = (rounded == 0).float().mean().item()
-        over = (rounded > 0).float().mean().item()
+        true_moves = (val_y * MAX_MOVES).round()
+        floored = torch.floor(val_pred * MAX_MOVES).clamp(min=0)
+        exact = (floored == true_moves).float().mean().item()
+        over = (floored > true_moves).float().mean().item()
 
     scheduler.step(val_loss)
     cur_lr = optimizer.param_groups[0]["lr"]
@@ -116,6 +121,22 @@ for epoch in range(max_epochs):
 if best_state is None:
     best_state = copy.deepcopy(model.state_dict())
 
+# ---- calibrate safety margin on held-out calibration set (never used for training or checkpointing) ----
+model.load_state_dict(best_state)
+model.eval()
+with torch.no_grad():
+    calib_pred = model(calib_x).squeeze(-1) * MAX_MOVES
+    calib_true = (calib_y * MAX_MOVES).round()
+    calib_err = calib_pred - calib_true  # positive = overestimate
+    margin = torch.quantile(calib_err.float().cpu(), margin_quantile).clamp(min=0).item()
+    final = torch.floor(calib_pred - margin).clamp(min=0)
+    final_over = (final > calib_true).float().mean().item()
+    final_gap = (calib_true - final).mean().item()
+print(
+    f"Calibrated margin: {margin:.3f} moves | calib over-rate: {final_over:.3%} | "
+    f"mean underestimate: {final_gap:.2f} moves"
+)
+
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 torch.save(
     {
@@ -123,6 +144,7 @@ torch.save(
         "config": CONFIG,
         "max_moves": MAX_MOVES,
         "val_loss": best_val_loss,
+        "margin": margin,
     },
     f"{Save_Path}model_{timestamp}.pth",
 )
