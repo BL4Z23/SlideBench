@@ -2,12 +2,12 @@ import csv
 import heapq
 import json
 from itertools import count
-from slidebench.engine import won, valid_moves, move, decode, SHAPE
-
+from slidebench.engine import won, valid_moves, move, decode,encode, SHAPE
 GOAL_COL = 4
 
 
 def heuristic(board):
+    board = decode(board)
     red = next(p for p in board if p[0] == "R")
     r, c = red[1]
     if c == GOAL_COL:
@@ -31,7 +31,7 @@ def astar(initial_board):
     )
 
     tie = count()
-    heap = [(heuristic(start), 0, next(tie), start)]
+    heap = [(heuristic(encode(start)), 0, next(tie), start)]
     g_best = {start: 0}
     parent = {start: None}
     explored = 0
@@ -75,7 +75,7 @@ def astar(initial_board):
                 g_best[new_board] = new_g
                 parent[new_board] = (current_board, (coordinates, distance))
                 heapq.heappush(
-                    heap, (new_g + heuristic(new_board), new_g, next(tie), new_board)
+                    heap, (new_g + heuristic(encode(new_board)), new_g, next(tie), new_board)
                 )
 
     return {

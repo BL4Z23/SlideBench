@@ -4,11 +4,11 @@ import json
 from itertools import count
 
 from slidebench.engine import won, valid_moves, move, decode,encode, SHAPE
-from MLP_Model import calculate_MLP_heuristic
+from .MLP_Model import calculate_MLP_heuristic
 
-Model_Path = "../../../data/Heuristic_Data/model_lr-e-3_l-25.pth"
 
-def astar_with_lh(initial_board, learned_heuristic):
+
+def astar_with_lh(initial_board,Model_Path, learned_heuristic):
     start = tuple(
         (piece[0], tuple(piece[1]))
         for piece in sorted(initial_board, key=lambda p: p[1])
